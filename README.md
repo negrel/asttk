@@ -3,9 +3,15 @@
 
 ## Features
 ASTTK is a set of packages that provide tools to manipulate go files/packages easily:
-- Parse a package and its sub-packages.
-- Efficient AST inspection with multiple "inspect" function.
-- Help functions for common AST edition.
+- **Parse**
+	- Parse a go file.
+	- Parse a go package.
+	- Parse a go package, and it's sub-package.
+- **Inspector**
+	- Split your AST Inspection in multiple Inspector
+	- Efficient inspection with multiple Inspectors.
+- **Edit**
+	- Ready-to-use Inspector function for basic AST edition.
 
 ### Contributing
 If you want to contribute to **asttk** to add a feature or improve the code contact me at
