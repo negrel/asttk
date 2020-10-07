@@ -2,7 +2,7 @@
 *A toolkit to parse/edit/inspect go files.*
 
 ## Features
-ASTTK is a set of packages that provide tools to manipulate go files/packages easily:
+**ASTTK** is a set of packages that provide tools to manipulate go files/packages easily:
 - **Parse**
 	- Parse a go file.
 	- Parse a go package.
@@ -14,7 +14,7 @@ ASTTK is a set of packages that provide tools to manipulate go files/packages ea
 	- Ready-to-use Inspector function for basic AST edition.
 
 ### Contributing
-If you want to contribute to **asttk** to add a feature or improve the code contact me at
+If you want to contribute to **ASTTK** to add a feature or improve the code contact me at
 [negrel.dev@protonmail.com](mailto:negrel.dev@protonmail.com), open an [issue](https://github.com/negrel/asttk/issues)
 or make a [pull request](https://github.com/negrel/asttk/pulls).
 
