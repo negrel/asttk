@@ -3,7 +3,7 @@ package edit
 import (
 	"go/ast"
 
-	"github.com/negrel/debuggo/pkg/inspector"
+	"github.com/negrel/asttk/pkg/inspector"
 )
 
 // ChangePackage return an Inspector function that will change the package

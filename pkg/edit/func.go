@@ -5,7 +5,7 @@ import (
 	"go/ast"
 	"strings"
 
-	"github.com/negrel/debuggo/pkg/inspector"
+	"github.com/negrel/asttk/pkg/inspector"
 )
 
 // Func is an helper to edit functions.
