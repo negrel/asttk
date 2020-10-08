@@ -3,6 +3,7 @@ package edit
 import (
 	"fmt"
 	"go/ast"
+	"go/token"
 	"strings"
 
 	"github.com/negrel/asttk/pkg/inspector"
@@ -65,6 +66,10 @@ func (f *funcRenamer) renameFuncCall(node ast.Node) (recursive bool) {
 }
 
 func (f *funcRenamer) replaceFuncInCallExpr(callExpr *ast.CallExpr, newName string) {
+	if !token.IsIdentifier(newName) {
+		panic(fmt.Sprintf("%v is an invalid new name", newName))
+	}
+
 	split := strings.Split(newName, ".")
 
 	if length := len(split); length == 2 {
