@@ -29,6 +29,12 @@ func (uir *unusedImportsRemover) inspect(node ast.Node) (recursive bool) {
 		uir.requiredImports = make(map[string]ast.Spec)
 	}
 
+	if decl, isGenDecl := node.(*ast.GenDecl); isGenDecl {
+		if decl.Tok == token.IMPORT {
+			return false
+		}
+	}
+
 	ident, ok := node.(*ast.Ident)
 	if !ok || ident.Obj != nil {
 		return
