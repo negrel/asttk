@@ -22,6 +22,7 @@ var unusedImportsRemoverTests = []unusedImportsRemoverTest{
 
 import (
 	"fmt"
+	"log"
 	// image is imported but not used
 	"image"
 )
@@ -30,6 +31,10 @@ type date struct {
 	dd, mm, yy string 
 }
 
+func (d date) String() {
+	return string(d.dd)
+}
+
 func main() {
 	image := date{
 		dd:	"01",
@@ -37,22 +42,31 @@ func main() {
 		yy:	"1970",
 	}
 
-	fmt.Println("Hello world", image.dd)
-
-	fmt := image.dd
-	_ = fmt
+	log.Println("Hello world")
+	greet(image)
 }
+
+func greet(a fmt.Stringer) {
+	log.Println("Hello", a)
+}
+
 `,
 		out: `package main
 
 import (
 	"fmt"
+	"log"
 )
 
 type date struct { 
 	dd, mm, yy string
 }
 
+func (d date) String() {
+	return string(d.dd)
+}
+
+
 func main() {
 	image := date{
 		dd:	"01",
@@ -60,10 +74,12 @@ func main() {
 		yy:	"1970",
 	}
 
-	fmt.Println("Hello world", image.dd)
+	log.Println("Hello world")
+	greet(image)
+}
 
-	fmt := image.dd
-	_ = fmt
+func greet(a fmt.Stringer) {
+	log.Println("Hello", a)
 }
 `,
 	},
