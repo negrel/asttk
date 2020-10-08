@@ -126,6 +126,11 @@ func (p *GoPackage) Name() string {
 	return filepath.Base(p.path)
 }
 
+// FileSet return the fileset of the package.
+func (p *GoPackage) FileSet() *token.FileSet {
+	return p.fset
+}
+
 // SubPkgs return all the subpackages.
 func (p *GoPackage) SubPkgs() []*GoPackage {
 	return p.subPkgs
