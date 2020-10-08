@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"go/ast"
-	"go/printer"
+	"go/format"
 	"go/token"
 	"io"
 	"os"
@@ -86,11 +86,11 @@ func (f *GoFile) AST() *ast.File {
 
 // Fprint "pretty-print" the AST of the file to output.
 func (f *GoFile) Fprint(output io.Writer) error {
-	return printer.Fprint(output, token.NewFileSet(), f.ast)
+	return format.Node(output, token.NewFileSet(), f.ast)
 }
 
 // Bytes convert the AST of the file as an array of byte.
-func (f *GoFile) Bytes() ([]byte, error) {
+func (f *GoFile) Byte() ([]byte, error) {
 	buf := &bytes.Buffer{}
 
 	err := f.Fprint(buf)
