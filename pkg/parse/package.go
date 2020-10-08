@@ -16,7 +16,7 @@ type GoPackage struct {
 	path    string
 	subPkgs []*GoPackage
 	errors  []error
-	goFiles []*GoFile
+	Files   []*GoFile
 	fset    *token.FileSet
 }
 
@@ -102,7 +102,7 @@ func Package(pkgPath string, parseSubPkgs bool) (*GoPackage, error) {
 			path:    path,
 			errors:  errors,
 			subPkgs: subPkgs,
-			goFiles: goFiles,
+			Files:   goFiles,
 		}, nil
 	}
 
@@ -129,15 +129,10 @@ func (p *GoPackage) SubPkgs() []*GoPackage {
 	return p.subPkgs
 }
 
-// Files return all the go files of the package.
-func (p *GoPackage) Files() []*GoFile {
-	return p.goFiles
-}
-
 // WritePkg method write the go file source code in the file at the given
 // path.
 func (p *GoPackage) WritePkg(path string, writeSubPkgs bool) error {
-	for _, file := range p.goFiles {
+	for _, file := range p.Files {
 		err := file.WriteFile(filepath.Join(path, file.Name()))
 		if err != nil {
 			return err
