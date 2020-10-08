@@ -4,6 +4,7 @@ import (
 	"go/ast"
 )
 
+// Inspector define any function that can be used for AST inspection.
 type Inspector func(ast.Node) bool
 
 // Lieutenant define an Inspector that manage his own Inspectors.
