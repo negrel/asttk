@@ -1,5 +1,9 @@
+
 # :hammer_and_wrench: AST Toolkit
 *A toolkit to parse/edit/inspect go files.*
+
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/negrel/asttk)](https://pkg.go.dev/github.com/negrel/asttk)
+[![Go Report Card](https://goreportcard.com/badge/github.com/negrel/asttk)](https://goreportcard.com/report/github.com/negrel/asttk)
 
 ## Features
 **ASTTK** is a set of packages that provide tools to manipulate go files/packages easily:
