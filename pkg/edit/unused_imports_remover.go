@@ -3,7 +3,6 @@ package edit
 import (
 	"go/ast"
 	"go/token"
-	"path/filepath"
 	"strings"
 
 	"github.com/negrel/asttk/pkg/inspector"
@@ -11,7 +10,7 @@ import (
 
 type unusedImportsRemover struct {
 	allImports      []*ast.ImportSpec
-	requiredImports []ast.Spec
+	requiredImports map[string]ast.Spec
 }
 
 // RemoveUnusedImports return an inspector.Inspector that analyze the required package
@@ -27,6 +26,7 @@ func (uir *unusedImportsRemover) inspect(node ast.Node) (recursive bool) {
 
 	if file, isFile := node.(*ast.File); isFile {
 		uir.allImports = file.Imports
+		uir.requiredImports = make(map[string]ast.Spec)
 	}
 
 	ident, ok := node.(*ast.Ident)
@@ -40,13 +40,13 @@ func (uir *unusedImportsRemover) inspect(node ast.Node) (recursive bool) {
 		if identifier := _import.Name; identifier != nil {
 			name = identifier.Name
 		} else {
-			slice := strings.Split(_import.Path.Value, string(filepath.Separator))
+			slice := strings.Split(_import.Path.Value, "/")
 			name = slice[len(slice)-1]
 			name = strings.Trim(name, "\"")
 		}
 
 		if name == ident.Name {
-			uir.requiredImports = append(uir.requiredImports, _import)
+			uir.requiredImports[name] = _import
 		}
 	}
 
@@ -64,7 +64,12 @@ func (uir *unusedImportsRemover) removeImports(file *ast.File) {
 			continue
 		}
 
-		decl.Specs = uir.requiredImports
+		decls := make([]ast.Spec, 0, len(uir.requiredImports))
+		for _, _import := range uir.requiredImports {
+			decls = append(decls, _import)
+		}
+		decl.Specs = decls
+
 		break
 	}
 }
