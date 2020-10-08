@@ -6,7 +6,7 @@ import (
 	"go/ast"
 	"go/printer"
 	"go/token"
-	"log"
+	"io"
 	"path/filepath"
 
 	"golang.org/x/tools/go/packages"
@@ -78,13 +78,16 @@ func (f *GoFile) AST() *ast.File {
 	return f.ast
 }
 
-func (f *GoFile) Byte() []byte {
+// Fprint "pretty-print" the AST of the file to output.
+func (f *GoFile) Fprint(output io.Writer) error {
+	return printer.Fprint(output, token.NewFileSet(), f.ast)
+}
+
+// Byte convert the AST of the file as an array of byte.
+func (f *GoFile) Byte() ([]byte, error) {
 	buf := &bytes.Buffer{}
 
-	err := printer.Fprint(buf, token.NewFileSet(), f.ast)
-	if err != nil {
-		log.Fatal(err)
-	}
+	err := f.Fprint(buf)
 
-	return buf.Bytes()
+	return buf.Bytes(), err
 }
