@@ -8,25 +8,21 @@ import (
 	"github.com/negrel/asttk/pkg/inspector"
 )
 
-// Func is an helper to edit functions.
-type Func struct {
+type funcRenamer struct {
 	filter func(name string) (replaceName string, ok bool)
 }
 
-// NewFunc return an helper to edit functions.
-func NewFunc() *Func {
-	return &Func{}
-}
-
-// RenameFunc return an Inspector to rename function declaration and another one
+// RenameFunc return two inspector.Inspector, one to rename function declaration and another one
 // to rename function call.
-func (f *Func) RenameFunc(filter func(name string) (replaceName string, ok bool)) (renameFuncDecl, renameFuncCall inspector.Inspector) {
-	f.filter = filter
+func RenameFunc(filter func(name string) (replaceName string, ok bool)) (renameFuncDecl, renameFuncCall inspector.Inspector) {
+	f := &funcRenamer{
+		filter: filter,
+	}
 
 	return f.renameFuncDecl, f.renameFuncCall
 }
 
-func (f *Func) renameFuncDecl(node ast.Node) (recursive bool) {
+func (f *funcRenamer) renameFuncDecl(node ast.Node) (recursive bool) {
 	recursive = true
 
 	funcDecl, isFuncDecl := node.(*ast.FuncDecl)
@@ -45,7 +41,7 @@ func (f *Func) renameFuncDecl(node ast.Node) (recursive bool) {
 	return
 }
 
-func (f *Func) renameFuncCall(node ast.Node) (recursive bool) {
+func (f *funcRenamer) renameFuncCall(node ast.Node) (recursive bool) {
 	recursive = true
 
 	callExpr, isCallExpr := node.(*ast.CallExpr)
@@ -59,7 +55,7 @@ func (f *Func) renameFuncCall(node ast.Node) (recursive bool) {
 		if !ok {
 			return
 		}
-		f.replaceFunInCallExpr(callExpr, newName)
+		f.replaceFuncInCallExpr(callExpr, newName)
 
 	default:
 		return
@@ -68,7 +64,7 @@ func (f *Func) renameFuncCall(node ast.Node) (recursive bool) {
 	return
 }
 
-func (f *Func) replaceFunInCallExpr(callExpr *ast.CallExpr, newName string) {
+func (f *funcRenamer) replaceFuncInCallExpr(callExpr *ast.CallExpr, newName string) {
 	split := strings.Split(newName, ".")
 
 	if length := len(split); length == 2 {
