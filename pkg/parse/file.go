@@ -98,8 +98,8 @@ func (f *GoFile) Byte() ([]byte, error) {
 	return buf.Bytes(), err
 }
 
-// WriteFile method write the go file source code in the file at the given
-// path.
+// WriteFile method write the GoFile source code in the file
+// at the given path.
 func (f *GoFile) WriteFile(path string) error {
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0755)
 	if err != nil {

@@ -12,12 +12,12 @@ import (
 
 // GoPackage define a loaded/parsed go package.
 type GoPackage struct {
-	pkgPath     string
-	path        string
-	subPackages []*GoPackage
-	errors      []error
-	goFiles     []*GoFile
-	fset        *token.FileSet
+	pkgPath string
+	path    string
+	subPkgs []*GoPackage
+	errors  []error
+	goFiles []*GoFile
+	fset    *token.FileSet
 }
 
 func findSubPkgs(dir string) (subPkgs []*GoPackage) {
@@ -98,11 +98,11 @@ func Package(pkgPath string, parseSubPkgs bool) (*GoPackage, error) {
 		}
 
 		return &GoPackage{
-			pkgPath:     pkg.PkgPath,
-			path:        path,
-			errors:      errors,
-			subPackages: subPkgs,
-			goFiles:     goFiles,
+			pkgPath: pkg.PkgPath,
+			path:    path,
+			errors:  errors,
+			subPkgs: subPkgs,
+			goFiles: goFiles,
 		}, nil
 	}
 
@@ -126,10 +126,33 @@ func (p *GoPackage) Name() string {
 
 // SubPkgs return all the subpackages.
 func (p *GoPackage) SubPkgs() []*GoPackage {
-	return p.subPackages
+	return p.subPkgs
 }
 
 // Files return all the go files of the package.
 func (p *GoPackage) Files() []*GoFile {
 	return p.goFiles
+}
+
+// WritePkg method write the go file source code in the file at the given
+// path.
+func (p *GoPackage) WritePkg(path string, writeSubPkgs bool) error {
+	for _, file := range p.goFiles {
+		err := file.WriteFile(filepath.Join(path, file.Name()))
+		if err != nil {
+			return err
+		}
+	}
+
+	if !writeSubPkgs {
+		return nil
+	}
+	for _, subPkg := range p.subPkgs {
+		err := subPkg.WritePkg(filepath.Join(path, subPkg.Name()), true)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
