@@ -7,6 +7,7 @@ import (
 	"go/printer"
 	"go/token"
 	"io"
+	"os"
 	"path/filepath"
 
 	"golang.org/x/tools/go/packages"
@@ -16,6 +17,11 @@ import (
 type GoFile struct {
 	path string
 	ast  *ast.File
+}
+
+// NewGoFile return a GoFile object using the given parameters.
+func NewGoFile(path string, ast *ast.File) *GoFile {
+	return &GoFile{path: path, ast: ast}
 }
 
 // File parse the file at the given path and return a new *GoFile.
@@ -73,7 +79,7 @@ func (f *GoFile) Name() string {
 	return filepath.Base(f.path)
 }
 
-// AST return an *ast.File object of the file.
+// AST return the *ast.File object of the file.
 func (f *GoFile) AST() *ast.File {
 	return f.ast
 }
@@ -90,4 +96,15 @@ func (f *GoFile) Byte() ([]byte, error) {
 	err := f.Fprint(buf)
 
 	return buf.Bytes(), err
+}
+
+// WriteFile method write the go file source code in the file at the given
+// path.
+func (f *GoFile) WriteFile(path string) error {
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0755)
+	if err != nil {
+		return err
+	}
+
+	return f.Fprint(file)
 }
