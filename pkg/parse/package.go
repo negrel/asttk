@@ -15,7 +15,6 @@ type GoPackage struct {
 	pkgPath string
 	path    string
 	subPkgs []*GoPackage
-	errors  []error
 	Files   []*GoFile
 	fset    *token.FileSet
 }
@@ -84,9 +83,13 @@ func Package(pkgPath string, parseSubPkgs bool) (*GoPackage, error) {
 			subPkgs = findSubPkgs(pkgPath)
 		}
 
-		errors := make([]error, len(pkg.Errors))
-		for i, err := range pkg.Errors {
-			errors[i] = err
+		if length := len(pkg.Errors); length != 0 {
+			errors := fmt.Sprintf("%v error(s) found:\n", length)
+			for _, err := range pkg.Errors {
+				errors += fmt.Sprint(err) + "\n"
+			}
+
+			return nil, fmt.Errorf(errors)
 		}
 
 		goFiles := make([]*GoFile, len(pkg.Syntax))
@@ -100,7 +103,6 @@ func Package(pkgPath string, parseSubPkgs bool) (*GoPackage, error) {
 		return &GoPackage{
 			pkgPath: pkg.PkgPath,
 			path:    path,
-			errors:  errors,
 			subPkgs: subPkgs,
 			Files:   goFiles,
 		}, nil
