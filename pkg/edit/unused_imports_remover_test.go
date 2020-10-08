@@ -17,6 +17,7 @@ type unusedImportsRemoverTest struct {
 }
 
 var unusedImportsRemoverTests = []unusedImportsRemoverTest{
+	// variable identifier that shadow a package name
 	{
 		src: `package main
 
@@ -81,8 +82,53 @@ func main() {
 func greet(a fmt.Stringer) {
 	log.Println("Hello", a)
 }
+`},
+	// fff is an identifier, so the remover must avoid ast.GenDecl with an IMPORT token.
+	{
+		src: `package main
+
+import (
+	fff "fmt"
+)
+
+func main() {
+	fff.Println("Hello world")
+}
 `,
-	},
+		out: `package main
+
+import (
+	fff "fmt"
+)
+
+func main() {
+	fff.Println("Hello world")
+}
+`},
+	// fmt identifier is used twice but the package is imported once.
+	{
+		src: `package main
+
+import (
+	"fmt"
+)
+
+func main() {
+	fmt.Print("Hello")
+	fmt.Println(" world")
+}
+`,
+		out: `package main
+
+import (
+	"fmt"
+)
+
+func main() {
+	fmt.Print("Hello")
+	fmt.Println(" world")
+}
+`},
 }
 
 func TestUnusedImportsRemover(t *testing.T) {
