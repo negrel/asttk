@@ -15,9 +15,9 @@ func Lieutenant(Inspectors ...Inspector) Inspector {
 
 // Lead is the Inspector chief that manage the inspection.
 type Lead struct {
-	inspectors map[int]Inspector
-	depth      int
-	inactive   map[int]map[int]Inspector
+	depth    int
+	active   map[int]Inspector
+	inactive map[int]map[int]Inspector
 }
 
 // New return an Inspector Lead.
@@ -28,14 +28,15 @@ func New(inspectors ...Inspector) *Lead {
 	}
 
 	return &Lead{
-		inspectors: insp,
-		depth:      0,
-		inactive:   make(map[int]map[int]Inspector),
+		active:   insp,
+		depth:    0,
+		inactive: make(map[int]map[int]Inspector),
 	}
 }
 
 // Inspect start the inspection of the given node.
 func (l *Lead) Inspect(node ast.Node) {
+	l.enableInactive()
 	ast.Inspect(node, l.inspect)
 }
 
@@ -49,7 +50,7 @@ func (l *Lead) inspect(node ast.Node) bool {
 		}()
 	}
 
-	for index, inspector := range l.getInspectors() {
+	for index, inspector := range l.inspectors() {
 		recursiveHook := inspector(node)
 
 		if !recursiveHook {
@@ -57,7 +58,7 @@ func (l *Lead) inspect(node ast.Node) bool {
 		}
 	}
 
-	if len(l.inspectors) == 0 {
+	if len(l.active) == 0 {
 		l.enableInactive()
 		return false
 	}
@@ -69,8 +70,8 @@ func (l *Lead) disableForSubTree(index int) {
 		l.inactive[l.depth] = make(map[int]Inspector)
 	}
 
-	l.inactive[l.depth][index] = l.inspectors[index]
-	delete(l.inspectors, index)
+	l.inactive[l.depth][index] = l.active[index]
+	delete(l.active, index)
 }
 
 func (l *Lead) enableInactive() {
@@ -79,22 +80,22 @@ func (l *Lead) enableInactive() {
 	}
 
 	for index, inspector := range l.inactive[l.depth] {
-		l.inspectors[index] = inspector
+		l.active[index] = inspector
 	}
 	delete(l.inactive, l.depth)
 }
 
 // return an ordered array of the active inspectors
-func (l *Lead) getInspectors() []Inspector {
-	keys := make([]int, 0, len(l.inspectors))
-	for key, _ := range l.inspectors {
+func (l *Lead) inspectors() []Inspector {
+	keys := make([]int, 0, len(l.active))
+	for key, _ := range l.active {
 		keys = append(keys, key)
 	}
 	sort.Ints(keys)
 
-	inspectors := make([]Inspector, len(l.inspectors))
+	inspectors := make([]Inspector, len(l.active))
 	for i, index := range keys {
-		inspectors[i] = l.inspectors[index]
+		inspectors[i] = l.active[index]
 	}
 
 	return inspectors
