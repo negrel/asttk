@@ -37,7 +37,7 @@ func TestPkg_NewPkg_NoSubPkg(t *testing.T) {
 
 	assert.NotNil(t, pkg)
 	assert.Len(t, pkg.SubPkgs(), 0)
-	assert.Len(t, pkg.Files(), 1)
+	assert.Len(t, pkg.Files, 1)
 }
 
 func TestPkg_NewPkg_WithSubPkg(t *testing.T) {
@@ -48,7 +48,7 @@ func TestPkg_NewPkg_WithSubPkg(t *testing.T) {
 
 	assert.NotNil(t, pkg)
 	assert.Len(t, pkg.SubPkgs(), 1)
-	assert.Len(t, pkg.Files(), 1)
+	assert.Len(t, pkg.Files, 1)
 
 	subPkg := pkg.SubPkgs()[0]
 	subPkgPath := filepath.Join(dir, subPkg.Name())
