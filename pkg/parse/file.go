@@ -17,11 +17,12 @@ import (
 type GoFile struct {
 	path string
 	ast  *ast.File
+	fset *token.FileSet
 }
 
 // NewGoFile return a GoFile object using the given parameters.
 func NewGoFile(path string, ast *ast.File) *GoFile {
-	return &GoFile{path: path, ast: ast}
+	return &GoFile{path: path, ast: ast, fset: token.NewFileSet()}
 }
 
 // File parse the file at the given path and return a new *GoFile.
@@ -86,7 +87,7 @@ func (f *GoFile) AST() *ast.File {
 
 // Fprint "pretty-print" the AST of the file to output.
 func (f *GoFile) Fprint(output io.Writer) error {
-	return format.Node(output, token.NewFileSet(), f.ast)
+	return format.Node(output, f.fileSet(), f.ast)
 }
 
 // Bytes convert the AST of the file as an array of byte.
@@ -107,4 +108,22 @@ func (f *GoFile) WriteFile(path string) error {
 	}
 
 	return f.Fprint(file)
+}
+
+// FileSet return a token.FileSet if the GoFile belong to a GoPackage
+// and nil otherwise.
+func (f *GoFile) FileSet() *token.FileSet {
+	if f.fset != nil {
+		return f.fset
+	}
+
+	return nil
+}
+
+func (f *GoFile) fileSet() *token.FileSet {
+	if fset := f.FileSet(); fset != nil {
+		return fset
+	}
+
+	return token.NewFileSet()
 }

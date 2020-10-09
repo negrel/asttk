@@ -97,6 +97,7 @@ func Package(pkgPath string, parseSubPkgs bool) (*GoPackage, error) {
 			goFiles[i] = &GoFile{
 				path: pkg.GoFiles[i],
 				ast:  pkg.Syntax[i],
+				fset: pkg.Fset,
 			}
 		}
 
