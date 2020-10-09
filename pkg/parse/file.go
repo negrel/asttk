@@ -20,11 +20,6 @@ type GoFile struct {
 	fset *token.FileSet
 }
 
-// NewGoFile return a GoFile object using the given parameters.
-func NewGoFile(path string, ast *ast.File) *GoFile {
-	return &GoFile{path: path, ast: ast, fset: token.NewFileSet()}
-}
-
 // File parse the file at the given path and return a new *GoFile.
 // Test file (*_test.go) are not supported.
 func File(filePath string) (*GoFile, error) {
@@ -87,7 +82,7 @@ func (f *GoFile) AST() *ast.File {
 
 // Fprint "pretty-print" the AST of the file to output.
 func (f *GoFile) Fprint(output io.Writer) error {
-	return format.Node(output, f.fileSet(), f.ast)
+	return format.Node(output, f.fset, f.ast)
 }
 
 // Bytes convert the AST of the file as an array of byte.
@@ -118,12 +113,4 @@ func (f *GoFile) FileSet() *token.FileSet {
 	}
 
 	return nil
-}
-
-func (f *GoFile) fileSet() *token.FileSet {
-	if fset := f.FileSet(); fset != nil {
-		return fset
-	}
-
-	return token.NewFileSet()
 }
