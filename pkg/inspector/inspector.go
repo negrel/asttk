@@ -2,6 +2,7 @@ package inspector
 
 import (
 	"go/ast"
+	"sort"
 )
 
 // Inspector define any function that can be used for AST inspection.
@@ -48,7 +49,7 @@ func (l *Lead) inspect(node ast.Node) bool {
 		}()
 	}
 
-	for index, inspector := range l.inspectors {
+	for index, inspector := range l.getInspectors() {
 		recursiveHook := inspector(node)
 
 		if !recursiveHook {
@@ -81,4 +82,20 @@ func (l *Lead) enableInactive() {
 		l.inspectors[index] = inspector
 	}
 	delete(l.inactive, l.depth)
+}
+
+// return an ordered array of the active inspectors
+func (l *Lead) getInspectors() []Inspector {
+	keys := make([]int, 0, len(l.inspectors))
+	for key, _ := range l.inspectors {
+		keys = append(keys, key)
+	}
+	sort.Ints(keys)
+
+	inspectors := make([]Inspector, len(l.inspectors))
+	for i, index := range keys {
+		inspectors[i] = l.inspectors[index]
+	}
+
+	return inspectors
 }
