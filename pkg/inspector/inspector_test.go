@@ -148,5 +148,53 @@ func TestLieutenant(t *testing.T) {
 
 	assert.Equal(t, (expectedDeclCounter.value * 2), declCounter.value)
 	assert.Equal(t, (expectedNothingCounter.value * 2), nothingCounter.value)
+}
 
+func recordEveryNthNode(nth int, recorder *[]int) Inspector {
+	i := 0
+	return func(node ast.Node) bool {
+		i++
+
+		if i%nth == 0 {
+			*recorder = append(*recorder, nth)
+		}
+
+		return true
+	}
+}
+
+func TestLead_OrderRemain(t *testing.T) {
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, "", helloWorld, parser.AllErrors)
+	assert.Nil(t, err)
+
+	recorder := []int{}
+	lInspector := New(
+		recordEveryNthNode(3, &recorder),
+		recordEveryNthNode(2, &recorder),
+		recordEveryNthNode(1, &recorder),
+	)
+	lInspector.Inspect(file)
+
+	expected := func() []int {
+		result := make([]int, 0, 256)
+		i := 0
+		for len(result) < 256 {
+			i++
+
+			if i%3 == 0 {
+				result = append(result, 3)
+			}
+			if i%2 == 0 {
+				result = append(result, 2)
+			}
+			if i%1 == 0 {
+				result = append(result, 1)
+			}
+		}
+
+		return result[:len(recorder)]
+	}()
+
+	assert.EqualValues(t, expected, recorder)
 }
