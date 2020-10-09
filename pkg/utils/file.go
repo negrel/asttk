@@ -1,4 +1,4 @@
-package edit
+package utils
 
 import (
 	"go/ast"
@@ -21,8 +21,9 @@ func ChangePackage(name string) inspector.Inspector {
 	}
 }
 
-// ApplyOnTopDecl wraps Inspector that they are only called on top level
-// declaration.
+// ApplyOnTopDecl wraps the given Inspectors and call them on
+// every ast.File.Decls node. Inspectors wrapped by this helper
+// will be called before other inspectors of your inspector.Lead.
 func ApplyOnTopDecl(inspectors ...inspector.Inspector) inspector.Inspector {
 	wrappers := make([]inspector.Inspector, len(inspectors))
 

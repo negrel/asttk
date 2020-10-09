@@ -1,6 +1,9 @@
-package edit
+package utils
 
 import (
+	"bytes"
+	"go/ast"
+	"go/format"
 	"go/parser"
 	"go/token"
 	"testing"
@@ -8,15 +11,14 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/negrel/asttk/pkg/inspector"
-	"github.com/negrel/asttk/pkg/parse"
 )
 
-type unusedImportsRemoverTest struct {
+type testCase struct {
 	src string
 	out string
 }
 
-var unusedImportsRemoverTests = []unusedImportsRemoverTest{
+var unusedImportsRemoverTests = []testCase{
 	// variable identifier that shadow a package name
 	{
 		src: `package main
@@ -138,21 +140,28 @@ func TestUnusedImportsRemover(t *testing.T) {
 	editor := inspector.New(findUnusedImports)
 
 	for _, test := range unusedImportsRemoverTests {
-		file, err := parser.ParseFile(fset, "unusedImportsRemover", test.src, parser.AllErrors)
+		file, err := parser.ParseFile(fset, "", test.src, parser.AllErrors)
+		assert.Nil(t, err)
+		expectedFile, err := parser.ParseFile(fset, "", test.out, parser.AllErrors)
 		assert.Nil(t, err)
 
 		editor.Inspect(file)
 		removeUnusedImports(file)
 
-		actualResult, err := parse.NewGoFile("", file).Byte()
+		actualResult, err := getBytes(file)
 		assert.Nil(t, err)
 
-		expectedFile, err := parser.ParseFile(fset, "unusedImportsRemover", test.out, parser.AllErrors)
-		assert.Nil(t, err)
-
-		expectedResult, err := parse.NewGoFile("", expectedFile).Byte()
+		expectedResult, err := getBytes(expectedFile)
 		assert.Nil(t, err)
 
 		assert.EqualValues(t, string(expectedResult), string(actualResult))
 	}
+}
+
+func getBytes(file *ast.File) ([]byte, error) {
+	buf := &bytes.Buffer{}
+
+	err := format.Node(buf, token.NewFileSet(), file)
+
+	return buf.Bytes(), err
 }

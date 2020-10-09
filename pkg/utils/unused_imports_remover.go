@@ -1,4 +1,4 @@
-package edit
+package utils
 
 import (
 	"go/ast"
@@ -13,8 +13,10 @@ type unusedImportsRemover struct {
 	requiredImports map[string]ast.Spec
 }
 
-// RemoveUnusedImports return an inspector.Inspector that analyze the required package
-// and a function to remove package that are not required.
+// RemoveUnusedImports method return an inspector.Inspector and remover function.
+// Removing unused imports is a two step process. First, the inspector will scan
+// the required package of the given ast.File. Then returned function will remove
+// the unused imports.
 func RemoveUnusedImports() (inspector.Inspector, func(file *ast.File)) {
 	uir := new(unusedImportsRemover)
 
