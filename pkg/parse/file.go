@@ -90,7 +90,7 @@ func (f *GoFile) Fprint(output io.Writer) error {
 }
 
 // Bytes convert the AST of the file as an array of byte.
-func (f *GoFile) Byte() ([]byte, error) {
+func (f *GoFile) Bytes() ([]byte, error) {
 	buf := &bytes.Buffer{}
 
 	err := f.Fprint(buf)
