@@ -3,7 +3,6 @@ package parse
 import (
 	"fmt"
 	"go/token"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -17,29 +16,6 @@ type GoPackage struct {
 	subPkgs []*GoPackage
 	Files   []*GoFile
 	fset    *token.FileSet
-}
-
-func findSubPkgs(dir string) (subPkgs []*GoPackage) {
-	filesInfo, err := ioutil.ReadDir(dir)
-	if err != nil {
-		return
-	}
-
-	for _, fileInfo := range filesInfo {
-		if !fileInfo.IsDir() {
-			continue
-		}
-
-		filePath := filepath.Join(dir, fileInfo.Name())
-		subPkg, err := Package(filePath, true)
-		if err != nil {
-			continue
-		}
-
-		subPkgs = append(subPkgs, subPkg)
-	}
-
-	return
 }
 
 // Package parse an entire package at the given path and return a new *GoPackage.
@@ -83,24 +59,12 @@ func Package(pkgPath string, parseSubPkgs bool) (*GoPackage, error) {
 			subPkgs = findSubPkgs(pkgPath)
 		}
 
-		if length := len(pkg.Errors); length != 0 {
-			errors := fmt.Sprintf("%v error(s) found:\n", length)
-			for _, err := range pkg.Errors {
-				errors += fmt.Sprint(err) + "\n"
-			}
-
-			return nil, fmt.Errorf(errors)
+		err = fmtErrors(pkg.Errors)
+		if err != nil {
+			return nil, err
 		}
 
-		goFiles := make([]*GoFile, len(pkg.Syntax))
-		for i := 0; i < len(goFiles); i++ {
-			goFiles[i] = &GoFile{
-				path: pkg.GoFiles[i],
-				ast:  pkg.Syntax[i],
-				fset: pkg.Fset,
-			}
-		}
-
+		goFiles := extractFile(pkg)
 		return &GoPackage{
 			pkgPath: pkg.PkgPath,
 			path:    path,
