@@ -2,101 +2,110 @@ package inspector
 
 import (
 	"go/ast"
-	"sort"
+	"log"
 )
 
-// Inspector define any function that can be used for AST inspection.
-type Inspector func(ast.Node) bool
+type Inspector func(node ast.Node) bool
+
+// Lead is the Inspector chief that manage the inspection.
+type Lead struct {
+	active   []Inspector
+	depth    int
+	inactive map[int]map[int]Inspector
+}
 
 // Lieutenant define an Inspector that manage his own Inspectors.
 func Lieutenant(Inspectors ...Inspector) Inspector {
 	return New(Inspectors...).inspect
 }
 
-// Lead is the Inspector chief that manage the inspection.
-type Lead struct {
-	depth    int
-	active   map[int]Inspector
-	inactive map[int]map[int]Inspector
-}
-
 // New return an Inspector Lead.
 func New(inspectors ...Inspector) *Lead {
-	insp := make(map[int]Inspector, len(inspectors))
-	for index, inspector := range inspectors {
-		insp[index] = inspector
+	length := len(inspectors)
+	ii := make([]Inspector, length, length+1)
+	for i, inspector := range inspectors {
+		ii[i] = inspector
 	}
 
 	return &Lead{
-		active:   insp,
+		active:   ii,
 		depth:    0,
 		inactive: make(map[int]map[int]Inspector),
 	}
 }
 
-// Inspect start the inspection of the given node.
 func (l *Lead) Inspect(node ast.Node) {
-	l.enableInactive()
+	l.depth = 0
 	ast.Inspect(node, l.inspect)
 }
 
 func (l *Lead) inspect(node ast.Node) bool {
-	if node != nil {
-		defer func() { l.depth++ }()
-	} else {
+	if node == nil {
 		defer func() {
 			l.depth--
-			l.enableInactive()
+			l.recoverStoppedAt(l.depth)
+		}()
+	} else {
+		defer func() {
+			l.depth++
 		}()
 	}
 
-	for index, inspector := range l.inspectors() {
-		recursiveHook := inspector(node)
+	// log.Println(l.active)
+	i := -1
+	for index, inspector := range l.active {
+		i++
 
-		if !recursiveHook {
-			l.disableForSubTree(index)
+		ok := inspector(node)
+		if !ok {
+			l.stopAt(l.depth, i, index)
+			i--
 		}
 	}
 
 	if len(l.active) == 0 {
-		l.enableInactive()
+		l.recoverStoppedAt(l.depth)
 		return false
 	}
+
 	return true
 }
 
-func (l *Lead) disableForSubTree(index int) {
-	if l.inactive[l.depth] == nil {
-		l.inactive[l.depth] = make(map[int]Inspector)
-	}
-
-	l.inactive[l.depth][index] = l.active[index]
-	delete(l.active, index)
-}
-
-func (l *Lead) enableInactive() {
+func (l *Lead) recoverStoppedAt(depth int) {
 	if _, ok := l.inactive[l.depth]; !ok {
 		return
 	}
 
-	for index, inspector := range l.inactive[l.depth] {
-		l.active[index] = inspector
+	for index, inspector := range l.inactive[depth] {
+		log.Println(len(l.active), l.active, depth, index, l.inactive[depth])
+		if length := len(l.active); length == 0 || length <= index {
+			l.active = append(l.active, inspector)
+		} else {
+			tmp := l.active[index+1:]
+			l.active = append(l.active, inspector)
+			l.active = append(l.active, tmp...)
+		}
+		// if length := len(l.active); length == 0 || length == index {
+		// 	l.active = append(l.active, inspector)
+		// } else {
+		// 	log.Println(len(l.active), index, l.active)
+		// 	last := length - 1
+		// 	l.active = append(l.active, l.active[last])
+		// 	copy(l.active[index+1:], l.active[index:last])
+		// 	l.active[index] = inspector
+		// }
 	}
-	delete(l.inactive, l.depth)
+
+	delete(l.inactive, depth)
 }
 
-// return an ordered array of the active inspectors
-func (l *Lead) inspectors() []Inspector {
-	keys := make([]int, 0, len(l.active))
-	for key, _ := range l.active {
-		keys = append(keys, key)
-	}
-	sort.Ints(keys)
+func (l *Lead) stopAt(depth, i, index int) {
+	log.Println("disabling", i, l.active[i], "at depth", depth)
 
-	inspectors := make([]Inspector, len(l.active))
-	for i, index := range keys {
-		inspectors[i] = l.active[index]
+	if l.inactive[depth] == nil {
+		l.inactive[depth] = make(map[int]Inspector)
 	}
 
-	return inspectors
+	l.inactive[depth][index] = l.active[i]
+	l.active = append(l.active[:i], l.active[i+1:]...)
 }
