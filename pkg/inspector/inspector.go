@@ -2,7 +2,6 @@ package inspector
 
 import (
 	"go/ast"
-	"log"
 )
 
 type Inspector func(node ast.Node) bool
@@ -51,7 +50,6 @@ func (l *Lead) inspect(node ast.Node) bool {
 		}()
 	}
 
-	// log.Println(l.active)
 	i := -1
 	for index, inspector := range l.active {
 		i++
@@ -72,40 +70,31 @@ func (l *Lead) inspect(node ast.Node) bool {
 }
 
 func (l *Lead) recoverStoppedAt(depth int) {
-	if _, ok := l.inactive[l.depth]; !ok {
+	inactive, ok := l.inactive[depth]
+	if !ok {
 		return
 	}
 
-	for index, inspector := range l.inactive[depth] {
-		log.Println(len(l.active), l.active, depth, index, l.inactive[depth])
+	for index, inspector := range inactive {
 		if length := len(l.active); length == 0 || length <= index {
 			l.active = append(l.active, inspector)
 		} else {
-			tmp := l.active[index+1:]
-			l.active = append(l.active, inspector)
-			l.active = append(l.active, tmp...)
+			last := len(l.active) - 1
+			l.active = append(l.active, l.active[last])
+			copy(l.active[index+1:], l.active[index:last])
+			l.active[index] = inspector
 		}
-		// if length := len(l.active); length == 0 || length == index {
-		// 	l.active = append(l.active, inspector)
-		// } else {
-		// 	log.Println(len(l.active), index, l.active)
-		// 	last := length - 1
-		// 	l.active = append(l.active, l.active[last])
-		// 	copy(l.active[index+1:], l.active[index:last])
-		// 	l.active[index] = inspector
-		// }
 	}
 
 	delete(l.inactive, depth)
 }
 
 func (l *Lead) stopAt(depth, i, index int) {
-	log.Println("disabling", i, l.active[i], "at depth", depth)
-
-	if l.inactive[depth] == nil {
-		l.inactive[depth] = make(map[int]Inspector)
+	inactive, ok := l.inactive[depth]
+	if !ok {
+		return
 	}
 
-	l.inactive[depth][index] = l.active[i]
+	inactive[index] = l.active[i]
 	l.active = append(l.active[:i], l.active[i+1:]...)
 }

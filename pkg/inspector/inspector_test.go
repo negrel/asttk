@@ -1,9 +1,11 @@
 package inspector
 
 import (
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"log"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,6 +33,8 @@ func declCount(c *counter) Inspector {
 	return func(node ast.Node) bool {
 		if _, isDecl := node.(ast.Decl); isDecl {
 			c.value++
+			log.Println("decl:", c.value)
+
 			return false
 		}
 
@@ -42,6 +46,7 @@ func stmtCount(c *counter) Inspector {
 	return func(node ast.Node) bool {
 		if _, isStmt := node.(ast.Stmt); isStmt {
 			c.value++
+			log.Println("stmt:", c.value, node)
 		}
 
 		return true
@@ -134,67 +139,77 @@ func TestLieutenant(t *testing.T) {
 	// Expected
 	expectedDeclCounter := new(counter)
 	expectedNothingCounter := new(counter)
+	log.Println("expected")
 	ast.Inspect(file, declCount(expectedDeclCounter))
 	ast.Inspect(file, nothingCount(expectedNothingCounter))
 
 	// Actual
 	declCounter := new(counter)
 	nothingCounter := new(counter)
+	log.Println("actual")
+	l1 := Lieutenant(declCount(declCounter), nothingCount(nothingCounter))
+	l2 := Lieutenant(declCount(declCounter), nothingCount(nothingCounter))
 	lInspector := New(
-		Lieutenant(declCount(declCounter), nothingCount(nothingCounter)),
-		Lieutenant(declCount(declCounter), nothingCount(nothingCounter)))
+		l1,
+		l2,
+	)
+
+	log.Println("l1", l1)
+	log.Println("l2", l2)
 
 	lInspector.Inspect(file)
 
-	assert.Equal(t, (expectedDeclCounter.value * 2), declCounter.value)
-	assert.Equal(t, (expectedNothingCounter.value * 2), nothingCounter.value)
+	assert.Equal(t, expectedDeclCounter.value*2, declCounter.value)
+	assert.Equal(t, expectedNothingCounter.value*2, nothingCounter.value)
 }
 
-func recordEveryNthNode(nth int, recorder *[]int) Inspector {
-	i := 0
-	return func(node ast.Node) bool {
-		i++
+func disableAfterNthNode(nth int, recorder *[]int) Inspector {
+	c := nth
 
-		if i%nth == 0 {
-			*recorder = append(*recorder, nth)
+	return func(node ast.Node) bool {
+		c--
+		if c == 0 {
+			c = nth
+			return false
 		}
 
+		*recorder = append(*recorder, nth)
 		return true
 	}
 }
 
 func TestLead_OrderRemain(t *testing.T) {
-	fset := token.NewFileSet()
-	file, err := parser.ParseFile(fset, "", helloWorld, parser.AllErrors)
-	assert.Nil(t, err)
+	testAST := &ast.BlockStmt{
+		List: []ast.Stmt{},
+	}
 
-	recorder := []int{}
-	lInspector := New(
-		recordEveryNthNode(3, &recorder),
-		recordEveryNthNode(2, &recorder),
-		recordEveryNthNode(1, &recorder),
-	)
-	lInspector.Inspect(file)
+	for i := 0; i < 127; i++ {
+		testAST.List = append(testAST.List, &ast.ExprStmt{
+			X: ast.NewIdent(fmt.Sprint(i)),
+		})
+	}
 
-	expected := func() []int {
-		result := make([]int, 0, 256)
-		i := 0
-		for len(result) < 256 {
-			i++
+	var recorder []int
+	inspectors := make([]Inspector, 8)
+	for i := 0; i < 8; i++ {
+		inspectors[i] = disableAfterNthNode(i+1, &recorder)
+	}
 
-			if i%3 == 0 {
-				result = append(result, 3)
-			}
-			if i%2 == 0 {
-				result = append(result, 2)
-			}
-			if i%1 == 0 {
-				result = append(result, 1)
-			}
+	inspectors = append(inspectors, func(node ast.Node) bool {
+		recorder = append(recorder, -1)
+
+		return true
+	})
+
+	lInspector := New(inspectors...)
+	lInspector.Inspect(testAST)
+
+	previousRecord := recorder[0]
+	for index, record := range recorder[1:] {
+		if record != -1 && record <= previousRecord {
+			t.Logf("Lead inspector swap recorder (inspector) %v and %v. (index %v)", record, previousRecord, index)
+			t.Fail()
 		}
-
-		return result[:len(recorder)]
-	}()
-
-	assert.EqualValues(t, expected, recorder)
+		previousRecord = record
+	}
 }
