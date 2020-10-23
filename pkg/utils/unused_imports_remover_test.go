@@ -131,6 +131,31 @@ func main() {
 	fmt.Println(" world")
 }
 `},
+	// log is also the name of the package
+	{
+		src: `package log
+
+import (
+	"fmt"
+	"log"
+)
+
+func main() {
+	fmt.Print("Hello")
+	fmt.Println(" world")
+}
+`,
+		out: `package log
+
+import (
+	"fmt"
+)
+
+func main() {
+	fmt.Print("Hello")
+	fmt.Println(" world")
+}
+`},
 }
 
 func TestUnusedImportsRemover(t *testing.T) {

@@ -9,6 +9,7 @@ import (
 )
 
 type unusedImportsRemover struct {
+	pkgName         *ast.Ident
 	allImports      []*ast.ImportSpec
 	requiredImports map[string]ast.Spec
 }
@@ -27,6 +28,7 @@ func (uir *unusedImportsRemover) inspect(node ast.Node) (recursive bool) {
 	recursive = true
 
 	if file, isFile := node.(*ast.File); isFile {
+		uir.pkgName = file.Name
 		uir.allImports = file.Imports
 		uir.requiredImports = make(map[string]ast.Spec)
 	}
@@ -38,7 +40,7 @@ func (uir *unusedImportsRemover) inspect(node ast.Node) (recursive bool) {
 	}
 
 	ident, ok := node.(*ast.Ident)
-	if !ok || ident.Obj != nil {
+	if !ok || ident.Obj != nil || ident == uir.pkgName {
 		return
 	}
 
