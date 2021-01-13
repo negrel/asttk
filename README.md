@@ -26,4 +26,4 @@ or make a [pull request](https://github.com/negrel/asttk/pulls).
 Please give a :star: if this project helped you!
 
 #### :scroll: License
-GPLv3 © [Alexandre Negrel](https://www.negrel.dev)
+MIT © [Alexandre Negrel](https://www.negrel.dev)
